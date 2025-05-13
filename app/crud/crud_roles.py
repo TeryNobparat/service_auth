@@ -55,4 +55,57 @@ def crud_add_roles(data: RoleUserCreate, db: Session):
 
 
 
+def crud_get_all_roles(db: Session = Depends(get_db)):
+    roles = db.query(Role).all()
+    return [RoleRead.from_orm(r) for r in roles]
 
+def crud_get_all_roles_by_user(user_id: UUID, db: Session = Depends(get_db)):
+    user_roles = db.query(UserRole).filter(UserRole.user_id == user_id).all()
+    if not user_roles:
+        raise HTTPException(status_code=404, detail="No roles found for the user")
+
+    roles = [db.query(Role).filter(Role.id == user_role.role_id).first() for user_role in user_roles]
+    return [RoleRead.from_orm(role) for role in roles if role]
+
+
+def crud_get_role_by_id(role_id: UUID, db: Session = Depends(get_db)):
+    role = db.query(Role).filter(Role.id == role_id).first()
+    if not role:
+        raise HTTPException(status_code=404, detail="Role not found")
+    return RoleRead.from_orm(role)
+
+
+def crud_update_role(role_id: UUID, role_data: RoleCreate, db: Session = Depends(get_db)):
+    role = db.query(Role).filter(Role.id == role_id).first()
+    if not role:
+        raise HTTPException(status_code=404, detail="Role not found")
+
+    for key, value in role_data.dict().items():
+        setattr(role, key, value)
+
+    db.commit()
+    db.refresh(role)
+    return RoleRead.from_orm(role)
+
+
+
+def crud_delete_role(role_id: UUID, db: Session = Depends(get_db)):
+    role = db.query(Role).filter(Role.id == role_id).first()
+    if not role:
+        raise HTTPException(status_code=404, detail="Role not found")
+    db.delete(role)
+    db.commit()
+    return {"detail": "Role deleted"}
+
+
+def crud_remove_role_from_user(user_id: UUID, role_id: UUID, db: Session = Depends(get_db)):
+    assignment = db.query(UserRole).filter(
+        UserRole.user_id == user_id,
+        UserRole.role_id == role_id
+    ).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="User-Role assignment not found")
+
+    db.delete(assignment)
+    db.commit()
+    return {"detail": "Role removed from user"}

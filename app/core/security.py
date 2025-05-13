@@ -37,14 +37,14 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 def decode_access_token(token: str) -> Dict[str, Any]:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
+        username: str = payload.get("sub") # type: ignore
         if username is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
         return payload
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication expired credentials")
 
-def get_current_user(token: str = Depends(oauth2_schema), db: Session = Depends(get_db)) -> User:
+def get_current_user(token: str = Depends(oauth2_schema), db: Session = Depends(get_db)):
     user_id = decode_access_token(token).get("sub")
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
@@ -52,7 +52,7 @@ def get_current_user(token: str = Depends(oauth2_schema), db: Session = Depends(
 
     user_roles = db.query(UserRole).filter(UserRole.user_id == user_id).all()
 
-    role_ids = [ur.role.id for ur in user_roles]
+    role_ids = [ur.role_id for ur in user_roles]  # 🟢 เปลี่ยนจาก ur.role.id เป็น ur.role_id
     roles = db.query(Role).filter(Role.id.in_(role_ids)).all()
     role_names = [role.name for role in roles]
 
@@ -66,12 +66,13 @@ def get_current_user(token: str = Depends(oauth2_schema), db: Session = Depends(
         "user_id": str(user.id),
         "username": user.username,
         "roles": role_names,
+        "role_ids": role_ids,  # ✅ เพิ่มตรงนี้
         "permissions": permission_names
     }
 
 def require_any_permission(*perms):
     def cheker(user: User = Depends(get_current_user)):
-        if not any(p in user.permission for p in perms):
+        if not any(p in user["permissions"] for p in perms):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Permission denied !!"

@@ -33,8 +33,8 @@ class UserUpdate(BaseModel):
         from_attributes = True
 
 class UserChangePassword(BaseModel):
-    old_password: constr(min_length=6)
-    new_password: constr(min_length=6)
+    old_password: constr(min_length=6) # type: ignore
+    new_password: constr(min_length=6) # type: ignore
 
     class Config:
         from_attributes = True

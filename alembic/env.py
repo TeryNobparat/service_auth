@@ -14,7 +14,7 @@ import app.models  # ดึง models ทั้งหมด (ต้อง import
 
 # Alembic Config
 config = context.config
-fileConfig(config.config_file_name)
+fileConfig(config.config_file_name) # type: ignore
 target_metadata = Base.metadata
 
 
