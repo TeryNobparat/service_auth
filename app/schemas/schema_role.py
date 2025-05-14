@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from uuid import UUID
+from typing import List
 
 class RoleBase(BaseModel):
     name: str
@@ -26,3 +27,4 @@ class RoleUserRead(RoleUser):
 
     class Config:
         from_attributes = True
+

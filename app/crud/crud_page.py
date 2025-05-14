@@ -5,7 +5,7 @@ from uuid import UUID
 from app.core.database import get_db
 from app.models.page import Page
 from app.models.pagerole import PageRole
-from app.schemas.schema_page import PageCreate, PageRead
+from app.schemas.schema_page import PageCreate, PageRead,RolePageUpdate
 
 
 def crud_create_page(page_data: PageCreate, db: Session = Depends(get_db)) -> PageRead:
@@ -40,6 +40,16 @@ def crud_update_page(page_id: UUID, page_data: PageCreate, db: Session = Depends
     db.refresh(page)
     return PageRead.from_orm(page)
 
+def crud_update_is_active(page_id: UUID, is_active: bool, db: Session = Depends(get_db)) -> PageRead:
+    page = db.query(Page).filter(Page.id == page_id).first()
+    if not page:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    page.is_active = is_active  # type: ignore
+    db.commit()
+    db.refresh(page)
+    return PageRead.from_orm(page)
+
 
 def crud_delete_page(page_id: UUID, db: Session = Depends(get_db)):
     page = db.query(Page).filter(Page.id == page_id).first()
@@ -55,3 +65,20 @@ def crud_get_pages_by_roles(role_ids: list[UUID], db: Session = Depends(get_db))
     pages = db.query(Page).join(PageRole, Page.id == PageRole.page_id)
     pages = pages.filter(PageRole.role_id.in_(role_ids), Page.is_active == True).order_by(Page.order_index).all()
     return [PageRead.from_orm(page) for page in pages]
+
+def crud_post_page_roles(page_id: UUID, role_ids: list[UUID], db: Session = Depends(get_db)):
+    print("ROLE IDS:", role_ids)
+    page = db.query(Page).filter(Page.id == page_id).first()
+    if not page:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    db.query(PageRole).filter(PageRole.page_id == page_id).delete()
+
+    for role_id in role_ids:
+        new_page_role = PageRole(page_id=page_id, role_id=role_id)
+        db.add(new_page_role)
+
+    db.commit()
+    return {"detail": "Page roles updated"}
+
+

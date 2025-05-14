@@ -66,7 +66,7 @@ def get_current_user(token: str = Depends(oauth2_schema), db: Session = Depends(
         "user_id": str(user.id),
         "username": user.username,
         "roles": role_names,
-        "role_ids": role_ids,  # ✅ เพิ่มตรงนี้
+        "role_ids": role_ids, 
         "permissions": permission_names
     }
 

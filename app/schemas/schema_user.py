@@ -43,3 +43,23 @@ class UserChangePassword(BaseModel):
 class UserSignin(BaseModel):
     username: str = Field(...,min_length=6)
     password: str = Field(...,min_length=8)
+
+
+
+# {
+#         "user_id": str(user.id),
+#         "username": user.username,
+#         "roles": role_names,
+#         "role_ids": role_ids, 
+#         "permissions": permission_names
+#     }
+
+class UserToken(BaseModel):
+    user_id: str
+    username: str
+    roles: list[str]
+    role_ids: list[UUID]
+    permissions: list[str]
+
+    class Config:
+        from_attributes = True

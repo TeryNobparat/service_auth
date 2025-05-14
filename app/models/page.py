@@ -15,8 +15,5 @@ class Page(Base):
     order_index = Column(Integer, default=0)             # ลำดับเมนู
     is_active = Column(Boolean, default=True)            # สำหรับเปิด/ปิดเมนู
 
-    # ความสัมพันธ์แบบ parent-child menu
-    parent = relationship("Page", remote_side=[id], backref="children")
-
     # ความสัมพันธ์กับ Role
     roles = relationship("Role", secondary="page_roles", back_populates="pages")
