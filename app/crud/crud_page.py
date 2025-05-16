@@ -8,12 +8,35 @@ from app.models.pagerole import PageRole
 from app.schemas.schema_page import PageCreate, PageRead,RolePageUpdate
 
 
+from collections import defaultdict
+from app.schemas.schema_page import PageRead
+
+def build_page_tree(pages: list[Page]) -> list[PageRead]:
+    page_map = {str(p.id): PageRead.from_orm(p) for p in pages}
+    tree = []
+
+    for page in page_map.values():
+        page.children = []  # reset ก่อน
+    for p in pages:
+        if p.parent_id is not None:
+            parent_id = str(p.parent_id)
+            if parent_id in page_map:
+                page_map[parent_id].children.append(page_map[str(p.id)]) # type: ignore
+        else:
+            tree.append(page_map[str(p.id)])
+
+    return tree
+
+
+
 def crud_create_page(page_data: PageCreate, db: Session = Depends(get_db)) -> PageRead:
     new_page = Page(**page_data.dict())
     db.add(new_page)
     db.commit()
     db.refresh(new_page)
     return PageRead.from_orm(new_page)
+
+
 
 
 def crud_get_all_pages(db: Session = Depends(get_db)) -> list[PageRead]:
@@ -61,10 +84,6 @@ def crud_delete_page(page_id: UUID, db: Session = Depends(get_db)):
     return {"detail": "Page deleted"}
 
 
-def crud_get_pages_by_roles(role_ids: list[UUID], db: Session = Depends(get_db)) -> list[PageRead]:
-    pages = db.query(Page).join(PageRole, Page.id == PageRole.page_id)
-    pages = pages.filter(PageRole.role_id.in_(role_ids), Page.is_active == True).order_by(Page.order_index).all()
-    return [PageRead.from_orm(page) for page in pages]
 
 def crud_post_page_roles(page_id: UUID, role_ids: list[UUID], db: Session = Depends(get_db)):
     print("ROLE IDS:", role_ids)

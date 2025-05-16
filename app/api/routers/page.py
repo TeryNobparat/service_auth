@@ -5,7 +5,7 @@ from uuid import UUID
 from app.core.database import get_db
 from app.models.page import Page
 from app.models.pagerole import PageRole
-from app.crud.crud_page import crud_create_page,crud_post_page_roles,crud_update_is_active
+from app.crud.crud_page import crud_create_page,crud_post_page_roles,crud_update_is_active,build_page_tree
 from app.schemas.schema_page import PageCreate, PageRead
 from app.core.security import require_any_permission, get_current_user
 
@@ -22,14 +22,17 @@ def crud_get_all_pages(db: Session = Depends(get_db), current_user = Depends(req
 
 
 
-@router.get("/my")
-def crud_get_pages_by_roles(db: Session = Depends(get_db), current_user = Depends(get_current_user)) :
+@router.get("/my", response_model=list[PageRead])
+def crud_get_pages_by_roles(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     role_ids = current_user["role_ids"]
-    pages = db.query(Page).join(PageRole, Page.id == PageRole.page_id)
-
-    pages = pages.filter(PageRole.role_id.in_(role_ids), Page.is_active == True).order_by(Page.order_index).all()
-    print(pages)
-    return [PageRead.from_orm(page) for page in pages]
+    pages = (
+        db.query(Page)
+        .join(PageRole, Page.id == PageRole.page_id)
+        .filter(PageRole.role_id.in_(role_ids), Page.is_active == True)
+        .order_by(Page.order_index)
+        .all()
+    )
+    return build_page_tree(pages)
 
 
 @router.get("/{page_id}", response_model=PageRead)

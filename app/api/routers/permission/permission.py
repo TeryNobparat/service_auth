@@ -1,21 +1,23 @@
+from typing import List
 from fastapi import Depends, APIRouter, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from uuid import UUID
 
 from app.crud.crud_permission import (
     crud_create_permission,
-    crud_add_permission,
     crud_get_all_permissions,
     crud_get_permission_by_id,
     crud_update_permission,
     crud_delete_permission,
-    crud_remove_permission_from_role
+    crud_remove_permission_from_role,
+    crud_assign_to_role
 )
 from app.schemas.schema_permission import (
     PermissionCreate,
     PermissionRead,
-    RoleRolePermissionRead,
-    RoleRolePermissionCreate
+    RolePermissionCreate,
+    RolePermissionRead
 )
 from app.models.user import User
 from app.core.security import require_any_permission
@@ -32,14 +34,16 @@ def api_create_permission(
 ):
     return crud_create_permission(permission_data, db)
 
-
-@router.post("/assignment", response_model=RoleRolePermissionCreate)
+@router.post("/{permission_id}/assign", response_model=RolePermissionRead)
 def api_assignments(
-    data: RoleRolePermissionCreate,
+    permission_id: UUID,
+    role_ids: List[UUID], 
     db: Session = Depends(get_db),
     current_user: User = Depends(require_any_permission("MANAGE_PERMISSIONS"))
 ):
-    return crud_add_permission(data, db)
+    print(role_ids)
+    print(permission_id)
+    return crud_assign_to_role(permission_id, role_ids, db)
 
 
 @router.get("/all", response_model=list[PermissionRead])
