@@ -1,11 +1,14 @@
+from unittest import result
 from fastapi import Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session,joinedload
 from app.core.database import get_db
+from app.schemas.schema_permission import PermissionRead
 from app.schemas.schema_role import RoleCreate, RoleRead,RoleUserCreate,RoleUserRead
 from app.models.role import Role
 from app.models.user import User
 from app.models.user_role import UserRole
 from uuid import UUID
+from typing import List
 
 
 def crud_create_role(role_data: RoleCreate, db: Session) -> RoleRead:
@@ -18,9 +21,7 @@ def crud_create_role(role_data: RoleCreate, db: Session) -> RoleRead:
     db.commit()
     db.refresh(new_role)
     return RoleRead.from_orm(new_role)
-
-
-
+    
 def crud_add_roles(data: RoleUserCreate, db: Session):
     user = db.query(User).filter(User.id == data.user_id).first()
     if not user:
@@ -55,9 +56,16 @@ def crud_add_roles(data: RoleUserCreate, db: Session):
 
 
 
-def crud_get_all_roles(db: Session = Depends(get_db)):
-    roles = db.query(Role).all()
-    return [RoleRead.from_orm(r) for r in roles]
+def crud_get_all_roles(db: Session) -> list[dict]:
+    roles = db.query(Role).options(joinedload(Role.permissions)).all() 
+    result = []
+    for role in roles:
+        result.append({
+            "id": role.id,
+            "name": role.name,
+            "permissions": [permission.name for permission in role.permissions],  # แปลงชื่อ permission เป็น list[str]
+        })
+    return result
 
 def crud_get_all_roles_by_user(user_id: UUID, db: Session = Depends(get_db)):
     user_roles = db.query(UserRole).filter(UserRole.user_id == user_id).all()

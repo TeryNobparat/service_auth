@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, constr, Field
-from typing import Optional
+from typing import Optional,List
 from uuid import UUID
 from datetime import datetime
 
@@ -18,6 +18,7 @@ class UserRead(UserBase):
     id: UUID
     created_at: datetime
     is_active: bool
+    roles: List[str] = []
 
     class Config:
         from_attributes = True  # สำหรับ SQLAlchemy >= 2.0

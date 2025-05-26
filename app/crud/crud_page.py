@@ -28,7 +28,6 @@ def build_page_tree(pages: list[Page]) -> list[PageRead]:
     return tree
 
 
-
 def crud_create_page(page_data: PageCreate, db: Session = Depends(get_db)) -> PageRead:
     new_page = Page(**page_data.dict())
     db.add(new_page)

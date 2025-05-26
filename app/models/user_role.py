@@ -11,5 +11,6 @@ class UserRole(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     role_id = Column(UUID(as_uuid=True), ForeignKey("roles.id"),nullable=False)
 
-    role = relationship("Role", backref="user_roles")
+    role = relationship("Role", backref="user_roles", overlaps="roles,users")
+
 

@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -10,7 +11,8 @@ from app.crud.crud_user import (
     crud_get_user_by_id,
     crud_delete_user,
     crud_user_get_all,
-    crud_user_remove_role
+    crud_user_remove_role,
+    crud_assignment_role
 )
 from app.schemas.schema_user import UserCreate, UserRead, UserChangePassword, UserUpdate
 
@@ -49,3 +51,7 @@ def api_delete_user(user_id: UUID, db: Session = Depends(get_db)):
 @router.delete("/{user_id}/remove-role/{role_id}")
 def api_user_remove_role(user_id: UUID, role_id: UUID, db: Session = Depends(get_db)):
     return crud_user_remove_role(user_id, role_id, db)
+
+@router.post("/{user_id}/roles")
+def api_assign_roles(user_id:UUID, data: List[UUID], db: Session = Depends(get_db)):
+    return crud_assignment_role(user_id,data,db)

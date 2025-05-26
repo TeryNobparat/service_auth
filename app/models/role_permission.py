@@ -12,4 +12,4 @@ class RolePermission(Base):
     permission_id = Column(UUID(as_uuid=True),ForeignKey("permissions.id"), nullable=False)
 
 
-    permission = relationship("Permission", backref="role_permissions")
+    permission = relationship("Permission", backref="role_permissions", overlaps="roles,permissions")

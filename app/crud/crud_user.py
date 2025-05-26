@@ -1,11 +1,13 @@
 from fastapi import Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session,joinedload
 from uuid import UUID
+from typing import List
 from app.models.user_role import UserRole
 from app.models.role import Role
 from app.schemas.schema_user import UserCreate, UserChangePassword, UserUpdate
 from app.core.security import hash_password, verify_password
 from app.models.user import User
+from app.crud.crud_roles import crud_get_role_by_id
 
 
 def crud_user_registor(user_create: UserCreate, db: Session) -> User:
@@ -30,9 +32,34 @@ def crud_user_registor(user_create: UserCreate, db: Session) -> User:
     db.refresh(new_user)
     return new_user
 
+def crud_assignment_role(userid: UUID, data: List[UUID], db: Session):
+    db.query(UserRole).filter(UserRole.user_id == userid).delete()
+    db.commit()
 
-def crud_user_get_all(db: Session) -> list[User]:
-    return db.query(User).all()
+    for role_id in data:
+        new_user_role = UserRole(user_id=userid, role_id=role_id) 
+        db.add(new_user_role)
+
+    db.commit() 
+    return {"detail": "Roles reassigned successfully"}
+
+
+def crud_user_get_all(db: Session) -> list[dict]:
+    users = db.query(User).options(joinedload(User.roles)).all()
+    result = []
+    for user in users:
+        result.append({
+            "id": user.id,
+            "username": user.username,
+            "full_name": user.full_name,
+            "table_tel": user.table_tel,
+            "fast_tel": user.fast_tel,
+            "email": user.email,
+            "created_at": user.created_at,
+            "is_active": user.is_active,
+            "roles": [role.name for role in user.roles],  # ✅ แปลงชื่อ role เป็น list[str]
+        })
+    return result
 
 
 def crud_change_password(user_id: UUID, pwd_data: UserChangePassword, db: Session) -> User:

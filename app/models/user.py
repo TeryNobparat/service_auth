@@ -1,5 +1,7 @@
+from re import S
 from sqlalchemy import Column, String, DateTime
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 import uuid
 import datetime
@@ -16,3 +18,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(String, default=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+    roles = relationship("Role", secondary="user_roles", back_populates="users", overlaps="user_roles")
+

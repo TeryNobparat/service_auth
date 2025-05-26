@@ -29,7 +29,10 @@ def api_assignment_role(data: RoleUserCreate, db: Session = Depends(get_db), cur
 
 
 @router.get("/all", response_model=list[RoleRead])
-def api_get_all_roles(db: Session = Depends(get_db), current_user: User = Depends(require_any_permission("MANAGE_PERMISSIONS"))):
+def api_get_all_roles(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_permission("MANAGE_PERMISSIONS")),
+):
     return crud_get_all_roles(db)
 
 

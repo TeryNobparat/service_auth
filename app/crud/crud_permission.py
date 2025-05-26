@@ -36,10 +36,7 @@ def crud_assign_to_role(permission_id : UUID ,role_ids: List[UUID], db: Session 
     db.commit()
     return RolePermissionRead.from_orm(assignment)
     
-    
-    
-
-
+      
 def crud_get_all_permissions(db: Session = Depends(get_db)):
     permissions = db.query(Permission).all()
     return [PermissionRead.from_orm(p) for p in permissions]

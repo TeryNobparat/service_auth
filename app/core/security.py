@@ -52,7 +52,7 @@ def get_current_user(token: str = Depends(oauth2_schema), db: Session = Depends(
 
     user_roles = db.query(UserRole).filter(UserRole.user_id == user_id).all()
 
-    role_ids = [ur.role_id for ur in user_roles]  # 🟢 เปลี่ยนจาก ur.role.id เป็น ur.role_id
+    role_ids = [ur.role_id for ur in user_roles]  # 🟢 เปลี่ยนจาก ur.role.id เป็น ur.role_id 
     roles = db.query(Role).filter(Role.id.in_(role_ids)).all()
     role_names = [role.name for role in roles]
 

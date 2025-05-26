@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from uuid import UUID
 from typing import List
 
+
 class RoleBase(BaseModel):
     name: str
 
@@ -10,7 +11,8 @@ class RoleCreate(RoleBase):
 
 class RoleRead(RoleBase):
     id: UUID
-
+    permissions: List[str] = []
+    
     class Config:
         from_attributes = True
 
@@ -24,6 +26,17 @@ class RoleUserCreate(RoleUser):
 
 class RoleUserRead(RoleUser):
     id: UUID
+
+    class Config:
+        from_attributes = True
+
+
+
+
+class UserOut(BaseModel):
+    id: UUID
+    username: str
+    roles: list[RoleBase]
 
     class Config:
         from_attributes = True

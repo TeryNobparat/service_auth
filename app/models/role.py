@@ -12,3 +12,8 @@ class Role(Base):
 
     # ความสัมพันธ์กับ Page
     pages = relationship("Page", secondary="page_roles", back_populates="roles")
+
+    # 🔧 แก้ชื่อ secondary และ back_populates ให้ตรงกับ user.py
+    users = relationship("User", secondary="user_roles", back_populates="roles", overlaps="user_roles")
+
+    permissions = relationship("Permission", secondary="role_permissions", back_populates="roles", overlaps="role_permissions")
