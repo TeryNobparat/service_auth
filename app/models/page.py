@@ -16,4 +16,4 @@ class Page(Base):
     is_active = Column(Boolean, default=True)            # สำหรับเปิด/ปิดเมนู
 
     # ความสัมพันธ์กับ Role
-    roles = relationship("Role", secondary="page_roles", back_populates="pages")
+    roles = relationship("Role", secondary="page_roles", back_populates="pages",overlaps="page_roles")

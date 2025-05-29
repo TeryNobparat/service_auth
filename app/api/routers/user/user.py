@@ -15,6 +15,8 @@ from app.crud.crud_user import (
     crud_assignment_role
 )
 from app.schemas.schema_user import UserCreate, UserRead, UserChangePassword, UserUpdate
+from app.models.user import User
+from app.core.security import require_any_permission
 
 router = APIRouter()
 
@@ -49,9 +51,9 @@ def api_delete_user(user_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.delete("/{user_id}/remove-role/{role_id}")
-def api_user_remove_role(user_id: UUID, role_id: UUID, db: Session = Depends(get_db)):
+def api_user_remove_role(user_id: UUID, role_id: UUID, db: Session = Depends(get_db),current_user: User = Depends(require_any_permission("MANAGE_PERMISSIONS"))):
     return crud_user_remove_role(user_id, role_id, db)
 
 @router.post("/{user_id}/roles")
-def api_assign_roles(user_id:UUID, data: List[UUID], db: Session = Depends(get_db)):
+def api_assign_roles(user_id:UUID, data: List[UUID], db: Session = Depends(get_db),current_user: User = Depends(require_any_permission("MANAGE_PERMISSIONS"))):
     return crud_assignment_role(user_id,data,db)

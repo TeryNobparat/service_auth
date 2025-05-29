@@ -5,7 +5,8 @@ from uuid import UUID
 from app.core.database import get_db
 from app.models.page import Page
 from app.models.pagerole import PageRole
-from app.schemas.schema_page import PageCreate, PageRead,RolePageUpdate
+from app.models.role import Role
+from app.schemas.schema_page import PageCreate, PageRead
 
 
 from collections import defaultdict
@@ -85,7 +86,6 @@ def crud_delete_page(page_id: UUID, db: Session = Depends(get_db)):
 
 
 def crud_post_page_roles(page_id: UUID, role_ids: list[UUID], db: Session = Depends(get_db)):
-    print("ROLE IDS:", role_ids)
     page = db.query(Page).filter(Page.id == page_id).first()
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
@@ -98,5 +98,20 @@ def crud_post_page_roles(page_id: UUID, role_ids: list[UUID], db: Session = Depe
 
     db.commit()
     return {"detail": "Page roles updated"}
+
+
+def crud_get_page_by_role(role_id:UUID,db:Session):
+    role = db.query(Role).filter(Role.id == role_id).first()
+    if not role:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Role not match")
+    
+    pages = db.query(PageRole).filter(PageRole.role_id == role.id).all()
+    
+    RolePages = {
+        "role_id": role_id,
+        "pages":[page.page_id for page in pages]
+    }
+
+    return RolePages
 
 

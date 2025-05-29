@@ -11,7 +11,7 @@ class Role(Base):
     name = Column(String, unique=True, nullable=False)
 
     # ความสัมพันธ์กับ Page
-    pages = relationship("Page", secondary="page_roles", back_populates="roles")
+    pages = relationship("Page", secondary="page_roles", back_populates="roles",overlaps="page_roles")
 
     # 🔧 แก้ชื่อ secondary และ back_populates ให้ตรงกับ user.py
     users = relationship("User", secondary="user_roles", back_populates="roles", overlaps="user_roles")

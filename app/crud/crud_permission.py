@@ -23,33 +23,22 @@ def crud_create_permission(permission_data: PermissionCreate, db: Session = Depe
     return PermissionRead.from_orm(new_permission)
 
 
-def crud_assign_to_role(permission_id : UUID ,role_ids: List[UUID], db: Session = Depends(get_db)):
-    permission = db.query(Permission).filter(Permission.id == permission_id).first()
-    if not permission:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Permission is not Macth.")
-    for role_id in role_ids:
-        role = db.query(Role).filter(Role.id == role_id).first()
-        if not role:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Role is not Macth.")
-        assignment = RolePermission(role_id=role_id, permission_id=permission_id)
-        db.add(assignment)
-    db.commit()
-    return RolePermissionRead.from_orm(assignment)
+
     
       
-def crud_get_all_permissions(db: Session = Depends(get_db)):
+def crud_get_all_permissions(db: Session):
     permissions = db.query(Permission).all()
     return [PermissionRead.from_orm(p) for p in permissions]
 
 
-def crud_get_permission_by_id(permission_id: int, db: Session = Depends(get_db)):
+def crud_get_permission_by_id(permission_id: UUID, db: Session):
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
     if not permission:
         raise HTTPException(status_code=404, detail="Permission not found")
     return PermissionRead.from_orm(permission)
 
 
-def crud_update_permission(permission_id: int, permission_data: PermissionCreate, db: Session = Depends(get_db)):
+def crud_update_permission(permission_id: UUID, permission_data: PermissionCreate, db: Session = Depends(get_db)):
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
     if not permission:
         raise HTTPException(status_code=404, detail="Permission not found")
@@ -62,17 +51,23 @@ def crud_update_permission(permission_id: int, permission_data: PermissionCreate
     return PermissionRead.from_orm(permission)
 
 
-def crud_delete_permission(permission_id: int, db: Session = Depends(get_db)):
+def crud_delete_permission(permission_id: UUID, db: Session):
     permission = db.query(Permission).filter(Permission.id == permission_id).first()
     if not permission:
         raise HTTPException(status_code=404, detail="Permission not found")
 
-    db.delete(permission)
-    db.commit()
+    try:
+        db.query(RolePermission).filter(RolePermission.permission_id == permission_id).delete(synchronize_session=False)
+        db.delete(permission)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error deleting role") from e
+    
     return {"detail": "Permission deleted"}
 
 
-def crud_remove_permission_from_role(role_id: int, permission_id: int, db: Session = Depends(get_db)):
+def crud_remove_permission_from_role(role_id: UUID, permission_id: UUID, db: Session = Depends(get_db)):
     assignment = db.query(RolePermission).filter(
         RolePermission.role_id == role_id,
         RolePermission.permission_id == permission_id

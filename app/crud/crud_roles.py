@@ -2,11 +2,13 @@ from unittest import result
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session,joinedload
 from app.core.database import get_db
-from app.schemas.schema_permission import PermissionRead
+from app.models.pagerole import PageRole
+from app.schemas.schema_permission import RolePermission
 from app.schemas.schema_role import RoleCreate, RoleRead,RoleUserCreate,RoleUserRead
 from app.models.role import Role
 from app.models.user import User
 from app.models.user_role import UserRole
+from app.models.role_permission import RolePermission
 from uuid import UUID
 from typing import List
 
@@ -22,48 +24,41 @@ def crud_create_role(role_data: RoleCreate, db: Session) -> RoleRead:
     db.refresh(new_role)
     return RoleRead.from_orm(new_role)
     
-def crud_add_roles(data: RoleUserCreate, db: Session):
-    user = db.query(User).filter(User.id == data.user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User ID does not exist in server!!"
-        )
-
-    role = db.query(Role).filter(Role.id == data.role_id).first()
-    if not role:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Role does not exist!!"
-        )
-
-    user_role = db.query(UserRole).filter(
-        UserRole.user_id == data.user_id,
-        UserRole.role_id == data.role_id
-    ).first()
-    if user_role:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Request is duplicate!!"
-        )
-
-    new_assignment = UserRole(**data.dict())
-    db.add(new_assignment)
+def crud_assign_permission(roleId: UUID, permissionList: List[UUID], db: Session):
+    db.query(RolePermission).filter(RolePermission.role_id == roleId).delete()
     db.commit()
-    db.refresh(new_assignment)
 
-    return RoleUserRead.from_orm(new_assignment)
+    for permission_id in permissionList:
+        new_role_permission = RolePermission(role_id=roleId, permission_id=permission_id) 
+        db.add(new_role_permission)
 
+    db.commit() 
+    return {"detail": "Permission reassigned successfully"}
+
+def crud_assign_pages(roleId: UUID, pagesList: List[UUID], db: Session):
+    db.query(PageRole).filter(PageRole.role_id == roleId).delete()
+    db.commit()
+
+    for page_id in pagesList:
+        new_role_pages = PageRole(role_id=roleId, page_id=page_id) 
+        db.add(new_role_pages)
+
+    db.commit() 
+    return {"detail": "Permission reassigned successfully"}
 
 
 def crud_get_all_roles(db: Session) -> list[dict]:
-    roles = db.query(Role).options(joinedload(Role.permissions)).all() 
+    roles = db.query(Role).options(
+        joinedload(Role.permissions),
+        joinedload(Role.pages)
+        ).all() 
     result = []
     for role in roles:
         result.append({
             "id": role.id,
             "name": role.name,
-            "permissions": [permission.name for permission in role.permissions],  # แปลงชื่อ permission เป็น list[str]
+            "permissions": [permission.id for permission in role.permissions], 
+            "pages": [page.id for page in role.pages] 
         })
     return result
 
@@ -101,9 +96,17 @@ def crud_delete_role(role_id: UUID, db: Session = Depends(get_db)):
     role = db.query(Role).filter(Role.id == role_id).first()
     if not role:
         raise HTTPException(status_code=404, detail="Role not found")
-    db.delete(role)
-    db.commit()
+
+    try:
+        db.query(RolePermission).filter(RolePermission.role_id == role.id).delete(synchronize_session=False)
+        db.delete(role)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error deleting role") from e
+
     return {"detail": "Role deleted"}
+
 
 
 def crud_remove_role_from_user(user_id: UUID, role_id: UUID, db: Session = Depends(get_db)):

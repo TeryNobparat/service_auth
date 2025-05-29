@@ -11,7 +11,8 @@ class RoleCreate(RoleBase):
 
 class RoleRead(RoleBase):
     id: UUID
-    permissions: List[str] = []
+    permissions: List[UUID] = []
+    pages: List[UUID] = []
     
     class Config:
         from_attributes = True

@@ -14,23 +14,26 @@ def crud_user_registor(user_create: UserCreate, db: Session) -> User:
     existing_user = db.query(User).filter(User.username == user_create.username).first()
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already registered !!")
+    
+    try:
+        hashed_password = hash_password(user_create.password)
 
-    hashed_password = hash_password(user_create.password)
+        new_user = User(
+            username=user_create.username,
+            full_name=user_create.full_name,
+            table_tel=user_create.table_tel,
+            fast_tel=user_create.fast_tel,
+            email=user_create.email,
+            hashed_password=hashed_password,
+            is_active=user_create.is_active,
+        )
 
-    new_user = User(
-        username=user_create.username,
-        full_name=user_create.full_name,
-        table_tel=user_create.table_tel,
-        fast_tel=user_create.fast_tel,
-        email=user_create.email,
-        hashed_password=hashed_password,
-        is_active=user_create.is_active,
-    )
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return new_user
+    except:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="data duplicate is check pls.")
 
 def crud_assignment_role(userid: UUID, data: List[UUID], db: Session):
     db.query(UserRole).filter(UserRole.user_id == userid).delete()
@@ -57,7 +60,7 @@ def crud_user_get_all(db: Session) -> list[dict]:
             "email": user.email,
             "created_at": user.created_at,
             "is_active": user.is_active,
-            "roles": [role.name for role in user.roles],  # ✅ แปลงชื่อ role เป็น list[str]
+            "roles": [role.name for role in user.roles],  
         })
     return result
 

@@ -10,8 +10,7 @@ from app.crud.crud_permission import (
     crud_get_permission_by_id,
     crud_update_permission,
     crud_delete_permission,
-    crud_remove_permission_from_role,
-    crud_assign_to_role
+    crud_remove_permission_from_role
 )
 from app.schemas.schema_permission import (
     PermissionCreate,
@@ -34,18 +33,6 @@ def api_create_permission(
 ):
     return crud_create_permission(permission_data, db)
 
-@router.post("/{permission_id}/assign", response_model=RolePermissionRead)
-def api_assignments(
-    permission_id: UUID,
-    role_ids: List[UUID], 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_permission("MANAGE_PERMISSIONS"))
-):
-    print(role_ids)
-    print(permission_id)
-    return crud_assign_to_role(permission_id, role_ids, db)
-
-
 @router.get("/all", response_model=list[PermissionRead])
 def api_get_all_permissions(
     db: Session = Depends(get_db),
@@ -56,7 +43,7 @@ def api_get_all_permissions(
 
 @router.get("/{permission_id}", response_model=PermissionRead)
 def api_get_permission_by_id(
-    permission_id: int,
+    permission_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_any_permission("MANAGE_PERMISSIONS"))
 ):
@@ -65,7 +52,7 @@ def api_get_permission_by_id(
 
 @router.put("/{permission_id}", response_model=PermissionRead)
 def api_update_permission(
-    permission_id: int,
+    permission_id: UUID,
     permission_data: PermissionCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_any_permission("MANAGE_PERMISSIONS"))
@@ -73,9 +60,9 @@ def api_update_permission(
     return crud_update_permission(permission_id, permission_data, db)
 
 
-@router.delete("/{permission_id}")
+@router.delete("/delete/{permission_id}")
 def api_delete_permission(
-    permission_id: int,
+    permission_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_any_permission("MANAGE_PERMISSIONS"))
 ):
@@ -84,8 +71,8 @@ def api_delete_permission(
 
 @router.delete("/{role_id}/remove/{permission_id}")
 def api_remove_permission_from_role(
-    role_id: int,
-    permission_id: int,
+    role_id: UUID,
+    permission_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_any_permission("MANAGE_PERMISSIONS"))
 ):
